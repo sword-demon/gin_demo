@@ -1,0 +1,142 @@
+package main
+
+import (
+	"github.com/gin-gonic/gin"
+	"html/template"
+	"net/http"
+)
+
+// 静态文件
+// html页面上用到的样式、css、js、图片
+
+func Hello(ctx *gin.Context) {
+	ctx.String(http.StatusOK, "hello world")
+}
+
+func main() {
+	r := gin.Default()
+
+	// 第一个参数是模板文件里引入的前缀
+	// 第二个是具体地址
+	r.Static("/xxx", "./statics")
+
+	// gin 框架中给模板添加自定义函数
+	r.SetFuncMap(template.FuncMap{
+		"safe": func(s string) template.HTML {
+			return template.HTML(s)
+		},
+	})
+
+	// 模板解析
+	//r.LoadHTMLFiles("templates/index.tmpl")
+
+	r.LoadHTMLGlob("templates/**/*") // 加载templates下的所有文件夹下的所有文件
+	r.GET("/posts/index", func(context *gin.Context) {
+		// 模板渲染 ，额偶群殴
+		context.HTML(http.StatusOK, "posts/index.tmpl", gin.H{
+			"title": "posts/gin框架模板渲染",
+		})
+	})
+
+	r.GET("/", Hello)
+
+	r.GET("/users/index", func(context *gin.Context) {
+		// 模板渲染 没有在模板里define起名字就以文件名为准
+		context.HTML(http.StatusOK, "users/index.tmpl", gin.H{
+			"title": "users/ <a href='www.baidu.com'>百度</a>",
+		})
+	})
+
+	r.GET("/json", func(context *gin.Context) {
+		// 方法1：使用map
+		//data := map[string]interface{}{
+		//	"name":    "无解",
+		//	"message": "hello world",
+		//	"age":     18,
+		//}
+		// 方法2
+		data := gin.H{
+			"name": "无解",
+			"age":  19,
+		}
+		context.JSON(http.StatusOK, data)
+	})
+
+	// 方法3 使用结构体
+	type msg struct {
+		// 小写不行，模板里会取不到，小写是私有的
+		Name    string `json:"name"` // 灵活使用结构体的tag来做定制化操作
+		Message string
+		Age     int
+	}
+
+	r.GET("/another_json", func(context *gin.Context) {
+		data := msg{
+			Name:    "无解",
+			Message: "你好啊",
+			Age:     19,
+		}
+		// json的序列化
+		// 默认的go语言的json模块是通过反射去进行序列化
+		// 结构体变量小写，是私有的，就读取不到
+		context.JSON(http.StatusOK, data)
+	})
+
+	r.GET("/web", func(c *gin.Context) {
+		// 遇事不决写注释
+		// 获取浏览器里请求携带的querystring 参数
+
+		// 1. 第一种
+		name := c.Query("query")
+		age := c.Query("age") // 多个键值对
+		// 2. 第二种
+		//name := c.DefaultQuery("query", "无解") // 没有传值就默认为无解
+
+		// 3. 第三种
+		//name, ok := c.GetQuery("query") // 取不到就返回false
+		//if !ok {
+		//	// 取不到
+		//	name = "somebody"
+		//}
+		c.JSON(http.StatusOK, gin.H{
+			"name": name,
+			"age":  age,
+		})
+	})
+
+	r.GET("/login", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "login/login.tmpl", nil)
+	})
+
+	r.POST("/login", func(c *gin.Context) {
+		//username := c.PostForm("username")
+		//password := c.PostForm("password") // 取到就返回值
+		//username := c.DefaultPostForm("username", "dqwdwdqw")
+		//password := c.DefaultPostForm("password", "****") // 取不到就返回一个默认值
+
+		username, ok := c.GetPostForm("username")
+		if !ok {
+			username = "sb"
+		}
+		password, _ := c.GetPostForm("password")
+		c.HTML(http.StatusOK, "index/index.tmpl", gin.H{
+			"Name":     username,
+			"Password": password,
+		})
+	})
+
+	// 这里注意理由的匹配 最好再加个前缀
+	r.GET("/user/:name/:age", func(c *gin.Context) {
+		// 获取路径参数 querystring
+		name := c.Param("name") // 返回的是字符串
+		age := c.Param("age")
+
+		c.JSON(http.StatusOK, gin.H{
+			"name": name,
+			"age":  age,
+		})
+	})
+
+	// 运行服务器 监控3000端口
+	r.Run(":3000")
+}

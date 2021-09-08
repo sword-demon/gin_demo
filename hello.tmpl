@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello</title>
+</head>
+<body>
+<p>user</p>
+<!-- 移除两边的空格，挨着两边的花括号 -->
+<p>姓名: {{- .user.Name -}}</p>
+<p>性别: {{ .user.Gender }}</p>
+<p>年龄: {{ .user.Age }}</p>
+<p>m1</p>
+<p>姓名: {{ .m1.name }}</p>
+<p>性别: {{ .m1.gender }}</p>
+<p>年龄: {{ .m1.age }}</p>
+
+{{$v1 := 100}}
+{{$age := .m1.age}}
+
+<!-- 条件判断 -->
+{{if $v1}}
+    {{$v1}}
+{{else}}
+    啥都没有
+{{end}}
+<hr>
+
+{{if lt .m1.age 22}}
+    好好上学
+{{else}}
+    好好工作
+{{end}}
+
+<hr>
+<!-- 循环 -->
+{{ range $idx, $hobby := .hobby}}
+    <p>{{$idx}} - {{$hobby}}</p>
+{{else}}
+    <p>空空如也,没啥爱好</p>
+{{end}}
+
+<hr>
+<!-- with 局部作用域 -->
+{{ with .m1 }}
+    <p>m1</p>
+    <p>姓名: {{ .name }}</p>
+    <p>性别: {{ .gender }}</p>
+    <p>年龄: {{ .age }}</p>
+{{end}}
+
+<hr>
+<!-- 取出爱好索引为2 的值 -->
+{{index .hobby 2}}
+</body>
+</html>
