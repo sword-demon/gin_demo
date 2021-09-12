@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
@@ -11,6 +12,12 @@ import (
 
 func Hello(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "hello world")
+}
+
+type UserInfo struct {
+	// 通常情况下要写的全一点
+	Username string `form:"username" json:"username"`
+	Password string `form:"password" json:"password"`
 }
 
 func main() {
@@ -135,6 +142,30 @@ func main() {
 			"name": name,
 			"age":  age,
 		})
+	})
+
+	// gin 使用参数绑定学习
+	r.GET("/user", func(c *gin.Context) {
+		//username := c.Query("username")
+		//password := c.Query("password")
+		//u := UserInfo{
+		//	username: username,
+		//	password: password,
+		//}
+		//fmt.Printf("%v\n", u)
+		var user UserInfo // 声明一个UserInfo类型的变量user
+		// 能根据你请求的参数自动匹配类型获取对应的数据
+		err := c.ShouldBind(&user) // 通过反射找到结构体的对应的字段
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			fmt.Printf("%v\n", user)
+			c.JSON(http.StatusOK, gin.H{
+				"message": "OK",
+			})
+		}
 	})
 
 	// 运行服务器 监控3000端口
