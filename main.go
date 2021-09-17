@@ -45,6 +45,32 @@ func main() {
 		})
 	})
 
+	r.GET("/upload", func(ctx *gin.Context) {
+		ctx.HTML(http.StatusOK, "upload/index.tmpl", nil)
+	})
+
+	// 简单上传文件的操作
+	r.POST("/upload_img", func(ctx *gin.Context) {
+		f, err := ctx.FormFile("f1")
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			// 将读取到的文件保存在本地(服务端本地)
+			dst := fmt.Sprintf("./%s", f.Filename)
+			err := ctx.SaveUploadedFile(f, dst)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+			}
+			ctx.JSON(http.StatusOK, gin.H{
+				"message": "ok",
+			})
+		}
+	})
+
 	r.GET("/", Hello)
 
 	r.GET("/users/index", func(context *gin.Context) {
