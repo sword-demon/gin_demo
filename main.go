@@ -20,6 +20,12 @@ type UserInfo struct {
 	Password string `form:"password" json:"password"`
 }
 
+func NotRoute(c *gin.Context) {
+	c.JSON(http.StatusBadRequest, gin.H{
+		"message": "not found",
+	})
+}
+
 func main() {
 	r := gin.Default()
 
@@ -42,6 +48,16 @@ func main() {
 		// 模板渲染 ，额偶群殴
 		context.HTML(http.StatusOK, "posts/index.tmpl", gin.H{
 			"title": "posts/gin框架模板渲染",
+		})
+	})
+
+	// 可以配置一个404页面
+	r.NoRoute(NotRoute)
+
+	// 包含了所有方法
+	r.Any("/user", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"method": "any",
 		})
 	})
 
@@ -216,6 +232,33 @@ func main() {
 			})
 		}
 	})
+
+	// 路由组
+	// 把公用的前缀提取出来，创建一个路由组
+	videoGroup := r.Group("/video")
+	{
+		// /video/index
+		videoGroup.GET("/index", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"msg": "/video/index",
+			})
+		})
+		// /video/xxx
+		videoGroup.GET("/xxx", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"msg": "/video/xxx",
+			})
+		})
+
+		// 嵌套路由组
+		xx := videoGroup.Group("xx")
+		xx.GET("/x1", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"msg": "/video/xx/x1",
+			})
+		})
+	}
+
 
 	// 运行服务器 监控3000端口
 	r.Run(":3000")
