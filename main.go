@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
+	"time"
 )
 
 // 静态文件
@@ -233,6 +234,9 @@ func main() {
 		}
 	})
 
+	// 全局注册中间件函数 m1
+	r.Use(m1, m2, authMiddleware(true))
+
 	// 路由组
 	// 把公用的前缀提取出来，创建一个路由组
 	videoGroup := r.Group("/video")
@@ -257,9 +261,60 @@ func main() {
 				"msg": "/video/xx/x1",
 			})
 		})
-	}
 
+		// 使用中间件
+		r.GET("/middleware", func(c *gin.Context) {
+			name, ok := c.Get("name") // 在上下文中取值 （跨中间件）
+			if !ok {
+				name = "匿名用户"
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"msg":  "middleware",
+				"name": name,
+			})
+		})
+	}
 
 	// 运行服务器 监控3000端口
 	r.Run(":3000")
+}
+
+func m1(c *gin.Context) {
+	fmt.Printf("m1 in ...")
+	start := time.Now()
+	c.Next() // 调用后面的
+	cost := time.Since(start)
+	c.Abort() // 组织调后续的处理
+	return    // 下面的就不会执行了
+	fmt.Printf("cost: %v\n", cost)
+	fmt.Println("m1 out...")
+}
+
+func m2(c *gin.Context) {
+	fmt.Printf("m2 in ...")
+	c.Set("name", "wujie") // 在上下文中设置值
+	c.Next() // 调用后面的
+	fmt.Println("m2 out...")
+}
+
+//func authMiddleware(c *gin.Context)  {
+//	// 是否登录判断
+//	// 是登录用户
+//	c.Next()
+//	// 否则
+//	c.Abort()
+//}
+
+// 中间件的一般写法
+func authMiddleware(doCheck bool) gin.HandlerFunc {
+	// 连接数据库
+	// 或者一些其他准备工作
+	return func(c *gin.Context) {
+		// 存放具体的逻辑
+		if doCheck {
+
+		} else {
+			c.Next()
+		}
+	}
 }
