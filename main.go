@@ -1,8 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"html/template"
 	"net/http"
 	"time"
@@ -10,6 +13,27 @@ import (
 
 // 静态文件
 // html页面上用到的样式、css、js、图片
+
+type UserTable struct {
+	ID     uint
+	Name   string
+	Gender string
+	Hobby  string
+}
+
+// User 定义模型
+type User struct {
+	gorm.Model
+	Name         string
+	Age          sql.NullInt64
+	Birthday     *time.Time
+	Email        string  `gorm:"type:varchar(100);unique_index"`
+	Role         string  `gorm:"size:255"`
+	MemberNumber *string `gorm:"unique;not null"` // 设置会员号 唯一且不为空
+	Num          int     `gorm:"AUTH_INCREMENT"`  // 设置自增
+	Address      string  `gorm:"index:addr"`      // 设置名为addr的索引
+	IgnoreMe     int     `gorm:"-"`               // 忽略本字段
+}
 
 func Hello(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "hello world")
@@ -28,6 +52,42 @@ func NotRoute(c *gin.Context) {
 }
 
 func main() {
+
+	db, err := gorm.Open("mysql", "root:root@(127.0.0.1:3306)/db1?charset=utf8mb4&parseTime=True&loc=Local")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	// 表名规则修改
+	gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string {
+		return "prefix_" + defaultTableName
+	}
+
+	// 禁用表名复数
+	db.SingularTable(true)
+
+	// 创建表、自动迁移:把结构体和数据表进行对应
+	db.AutoMigrate(&UserTable{})
+
+	// 表重新起名
+	//db.Table("wujie").CreateTable(&UserTable{})
+
+	// 创建数据行
+	u1 := UserTable{1, "无解", "男", "乒乓球"}
+	db.Create(u1)
+
+	// 查询数据
+	var u UserTable
+	db.First(&u) // 把查询的对象保存到u里，要传指针  查询表中第一条数据
+	fmt.Printf("u:%#v\n", u)
+
+	// 更新
+	db.Model(&u).Update("hobby", "双色球")
+
+	// 删除
+	db.Delete(&u)
+
 	r := gin.Default()
 
 	// 第一个参数是模板文件里引入的前缀
@@ -293,7 +353,7 @@ func m1(c *gin.Context) {
 func m2(c *gin.Context) {
 	fmt.Printf("m2 in ...")
 	c.Set("name", "wujie") // 在上下文中设置值
-	c.Next() // 调用后面的
+	c.Next()               // 调用后面的
 	fmt.Println("m2 out...")
 }
 
