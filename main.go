@@ -24,7 +24,7 @@ type UserTable struct {
 // User 定义模型
 type User struct {
 	gorm.Model
-	Name         string
+	Name         string `gorm:"default:'无解'"` // 设置默认值
 	Age          sql.NullInt64
 	Birthday     *time.Time
 	Email        string  `gorm:"type:varchar(100);unique_index"`
@@ -60,7 +60,7 @@ func main() {
 	defer db.Close()
 
 	// 表名规则修改
-	gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string {
+	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
 		return "prefix_" + defaultTableName
 	}
 
@@ -74,8 +74,15 @@ func main() {
 	//db.Table("wujie").CreateTable(&UserTable{})
 
 	// 创建数据行
-	u1 := UserTable{1, "无解", "男", "乒乓球"}
+	u1 := UserTable{1, "wujie", "男", "乒乓球"}
+	fmt.Println(db.NewRecord(&u1)) // true 判断主键是否为空
 	db.Create(u1)
+	//db.Debug().Create(u1) // 会打印出sql语句，可以再任何操作之前加上 Debug
+	fmt.Println(db.NewRecord(&u1)) // false
+
+	// 使用指针创建空值
+	//u2 := UserTable{Name: new(string), ID: 2, Gender: "男", Hobby: "篮球"}
+	//db.Create(&u2)
 
 	// 查询数据
 	var u UserTable
