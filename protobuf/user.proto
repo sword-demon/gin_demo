@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "./;user";
+
+package user;
+
+message User {
+    // 1 排序，字段序号
+    string name = 1;
+    // 2 排序，字段序号
+    int32 age = 2;
+}
